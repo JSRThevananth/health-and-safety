@@ -10,7 +10,6 @@ import userRoutes from './routes/users.js'
 import templateRoutes from './routes/templates.js'
 import inspectionRoutes from './routes/inspections.js'
 import attachmentRoutes from './routes/attachments.js'
-import notificationRoutes from './routes/notifications.js'
 import setupRoutes from './routes/setup.js'
 import recipientRoutes from './routes/recipients.js'
 import reportRoutes from './routes/reports.js'
@@ -63,7 +62,6 @@ export function createApp() {
         status: healthy ? 'ok' : 'degraded',
         env: config.environment,
         database,
-        email: config.brevo.enabled ? 'brevo' : 'dry-run',
         storage: storageBackend(config),
         // Named, not described in prose: whoever reads this is trying to fix it.
         problems,
@@ -106,7 +104,6 @@ export function createApp() {
   app.use('/inspections/*', requireAuth, requirePasswordChanged)
   app.use('/users/*', requireAuth, requirePasswordChanged)
   app.use('/attachments/*', requireAuth, requirePasswordChanged)
-  app.use('/notifications/*', requireAuth, requirePasswordChanged)
   app.use('/capas/*', requireAuth, requirePasswordChanged)
   app.use('/kpis/*', requireAuth, requirePasswordChanged)
 
@@ -121,7 +118,6 @@ export function createApp() {
   app.route('/attachments', attachmentRoutes)
   app.route('/capas', capaRoutes)
   app.route('/kpis', kpiRoutes)
-  app.route('/notifications', notificationRoutes)
 
   return app
 }

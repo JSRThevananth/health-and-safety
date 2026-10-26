@@ -28,27 +28,7 @@ const ALL = new Set(PERMISSIONS)
 
 /** Default capability set per role. Admin is handled separately - it gets everything. */
 export const ROLE_PRESETS = Object.freeze({
-  omni_admin: PERMISSIONS,
-
-  // The unit's H&S manager: runs their own unit end to end, including its form and
-  // its report recipients, but cannot create users or reach another unit.
-  unit_admin: [
-    'unit.view',
-    'template.view',
-    'template.edit',
-    'inspection.view',
-    'inspection.create',
-    'inspection.sign',
-    'capa.create',
-    'capa.assign',
-    'capa.close',
-    'recipient.manage',
-    'report.view',
-    'report.export',
-    'message.send',
-    'attachment.upload',
-    'attachment.delete',
-  ],
+  admin: PERMISSIONS,
 
   // Walks the floor and fills in checklists. Cannot sign off or close its own
   // findings - but can send the report for an inspection they have submitted,
@@ -89,11 +69,11 @@ export async function effectivePermissions(db, userId, role) {
 }
 
 /**
- * Units a user may act on. Omni admins are tenant-wide, so they return null meaning
+ * Units a user may act on. Admins are tenant-wide, so they return null meaning
  * "no restriction" - callers must treat null as all units within the tenant.
  */
 export async function accessibleUnitIds(db, userId, role) {
-  if (role === 'omni_admin') return null
+  if (role === 'admin') return null
   return db.pluck('SELECT unit_id FROM user_units WHERE user_id = @id', { id: userId })
 }
 

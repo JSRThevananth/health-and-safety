@@ -12,7 +12,7 @@ const UnitContext = createContext(null)
  * reach. Selection is a view filter, never a grant: choosing a unit cannot widen
  * access, because the server scopes every response independently.
  *
- * An omni admin additionally gets "All units" (null), which unit-scoped users do not.
+ * An admin additionally gets "All units" (null), which unit-scoped users do not.
  */
 export function UnitProvider({ children }) {
   const { user } = useAuth()
@@ -20,7 +20,7 @@ export function UnitProvider({ children }) {
   const [unitId, setUnitId] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const isOmni = user?.unit_ids === null
+  const isAdmin = user?.unit_ids === null
 
   useEffect(() => {
     // Nothing to fetch before sign-in, and the API blocks every unit route while a
@@ -50,13 +50,13 @@ export function UnitProvider({ children }) {
         // Fall back if the stored unit is no longer one this account can reach.
         const valid = stored !== null && list.some((u) => u.id === stored)
         if (valid) setUnitId(stored)
-        else if (isOmni) setUnitId(null)
+        else if (isAdmin) setUnitId(null)
         else setUnitId(list[0]?.id ?? null)
       })
       .catch(() => setUnits([]))
       .finally(() => !cancelled && setLoading(false))
     return () => { cancelled = true }
-  }, [user, isOmni])
+  }, [user, isAdmin])
 
   const select = (id) => {
     setUnitId(id)
@@ -73,12 +73,12 @@ export function UnitProvider({ children }) {
       units,
       unitId,
       unit: units.find((u) => u.id === unitId) ?? null,
-      isOmni,
-      canSelectAll: isOmni,
+      isAdmin,
+      canSelectAll: isAdmin,
       loading,
       select,
     }),
-    [units, unitId, isOmni, loading]
+    [units, unitId, isAdmin, loading]
   )
 
   return <UnitContext.Provider value={value}>{children}</UnitContext.Provider>

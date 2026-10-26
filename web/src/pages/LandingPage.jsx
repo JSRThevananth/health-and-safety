@@ -88,15 +88,15 @@ export default function LandingPage() {
       <section className="hero">
         <div className="hero__inner">
           <div className="hero__copy">
-            <span className="eyebrow">Airline catering · Health &amp; safety</span>
+            <span className="eyebrow">YUL · Health &amp; safety</span>
             <h1>
-              Every inspection, every unit,<br />
+              Every inspection,<br />
               <span className="hero__accent">audit ready.</span>
             </h1>
             <p className="lede">
-              A single platform for health &amp; safety inspection across catering units —
-              customisable checklists, photographic evidence, tracked corrective actions
-              and board-level reporting that arrives on its own.
+              Health &amp; safety inspection for YUL catering —
+              checklists, photographic evidence, tracked corrective actions
+              and reporting.
             </p>
             <div className="hero__cta">
               <Link className="btn btn--primary" to="/app">Open the platform</Link>

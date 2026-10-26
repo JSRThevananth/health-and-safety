@@ -3,17 +3,6 @@ import { api } from '../lib/api.js'
 import Brand from '../components/Brand.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
 
-/**
- * First-run setup, in the browser.
- *
- * This used to be a curl command, which meant the very first thing a new
- * customer did was paste JSON into a terminal - and get the quoting wrong. The
- * API has always refused to run twice; this is the same call behind a form.
- *
- * It is reachable without signing in because there is nobody to sign in as yet.
- * The server is what enforces "only once": the moment an organisation exists it
- * refuses, whoever is asking.
- */
 export default function SetupPage() {
   const [state, setState] = useState('checking')
   const [error, setError] = useState('')
@@ -22,16 +11,12 @@ export default function SetupPage() {
     organisation: '',
     admin_name: '',
     admin_email: '',
-    unit_name: '',
-    unit_code: '',
   })
 
   useEffect(() => {
     api('/setup/status', { auth: false })
       .then((status) => {
         if (status.needs_setup) return setState('ready')
-        // The organisation exists but its checklist does not: an interrupted
-        // setup. Offer to finish it rather than just saying "already set up".
         setState(status.needs_checklist ? 'unfinished' : 'done')
       })
       .catch((err) => {
@@ -42,8 +27,6 @@ export default function SetupPage() {
 
   const set = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }))
 
-  // A slug is only used internally, so derive it rather than asking for one more
-  // thing nobody setting this up has an opinion about.
   const slug =
     form.organisation
       .toLowerCase()
@@ -54,19 +37,8 @@ export default function SetupPage() {
   const ready =
     form.organisation.trim() &&
     form.admin_name.trim() &&
-    /\S+@\S+\.\S+/.test(form.admin_email) &&
-    form.unit_name.trim() &&
-    /^[A-Za-z0-9_-]+$/.test(form.unit_code.trim())
+    /\S+@\S+\.\S+/.test(form.admin_email)
 
-  /**
-   * Two requests, not one.
-   *
-   * The account and the 303-point checklist cannot be created in the same
-   * request: a Worker on the free plan gets 10ms of CPU, and the two together
-   * run past it. Splitting them keeps each inside the budget - and because the
-   * password comes back from the first, it is held and shown even if the
-   * second fails, which is the part that must never be lost.
-   */
   const submit = async (event) => {
     event.preventDefault()
     setState('working')
@@ -82,8 +54,8 @@ export default function SetupPage() {
           slug,
           admin_name: form.admin_name.trim(),
           admin_email: form.admin_email.trim(),
-          unit_name: form.unit_name.trim(),
-          unit_code: form.unit_code.trim().toUpperCase(),
+          unit_name: 'YUL Catering Unit',
+          unit_code: 'YUL',
         },
       })
     } catch (err) {
@@ -98,14 +70,11 @@ export default function SetupPage() {
       const checklist = await api('/setup/checklist', { method: 'POST', auth: false })
       setResult({ ...created, checklist: checklist.checklist })
     } catch (err) {
-      // The account exists and its password is on screen, so this is a partial
-      // success, not a failure. Say exactly that.
       setResult({ ...created, checklistError: err.payload?.error || err.message })
     }
     setState('created')
   }
 
-  /** Finish an interrupted setup: the account exists, the checklist does not. */
   const installChecklist = async () => {
     setState('installing')
     setError('')
@@ -139,7 +108,7 @@ export default function SetupPage() {
               <strong>Setup was interrupted.</strong>
               <span>
                 The organisation and the administrator exist, but the checklist was never
-                installed. Finish it now — your account and password are unchanged.
+                installed. Finish it now — your account and PIN are unchanged.
               </span>
             </p>
             {error && <p className="error" role="alert">{error}</p>}
@@ -174,9 +143,8 @@ export default function SetupPage() {
         {(state === 'ready' || state === 'working') && (
           <form onSubmit={submit} className="setup__form">
             <p className="muted">
-              This runs once and creates your organisation, your first unit, and the
-              administrator account. Everything can be changed afterwards except who you are
-              signing in as.
+              This runs once and creates your organisation, the YUL unit, and the
+              administrator account.
             </p>
 
             <label>
@@ -192,25 +160,6 @@ export default function SetupPage() {
             <label>
               Your email
               <input type="email" value={form.admin_email} onChange={set('admin_email')} placeholder="you@example.com" required />
-            </label>
-
-            <label>
-              First unit
-              <input value={form.unit_name} onChange={set('unit_name')} placeholder="Montreal Catering Unit" required />
-            </label>
-
-            <label>
-              Unit code
-              <input
-                value={form.unit_code}
-                onChange={set('unit_code')}
-                placeholder="YUL"
-                maxLength={20}
-                required
-              />
-              <span className="hint">
-                Short, and it appears on every report subject line. Letters, digits, - and _.
-              </span>
             </label>
 
             {error && <p className="error" role="alert">{error}</p>}
@@ -230,7 +179,6 @@ export default function SetupPage() {
 function Created({ result }) {
   const [copied, setCopied] = useState(false)
 
-  // Finishing an interrupted setup: no new account, so no password to show.
   if (result.checklistOnly) {
     return (
       <>
@@ -248,8 +196,6 @@ function Created({ result }) {
       await navigator.clipboard.writeText(result.admin.temporary_password)
       setCopied(true)
     } catch {
-      // Clipboard is blocked on an insecure origin or by policy. The password is
-      // on screen either way, which is what matters.
       setCopied(false)
     }
   }
@@ -264,27 +210,18 @@ function Created({ result }) {
         .
       </p>
 
-      {/*
-        The checklist step runs after the account is created, so it can fail on
-        its own. The password above is still valid and still the only copy, so
-        this is a note rather than an error - and it says what to do next.
-      */}
       {result.checklistError && (
         <p className="notice notice--warn">
           <strong>The checklist did not install.</strong>
           <span>
-            Your account is fine — write the password down, sign in, then reload this page to
+            Your account is fine — write the PIN down, sign in, then reload this page to
             finish. ({result.checklistError})
           </span>
         </p>
       )}
 
-      {/*
-        Shown once and never recoverable: there is no second administrator to
-        reset it, so this is deliberately the loudest thing on the page.
-      */}
       <div className="setup__password">
-        <span className="setup__password-label">Your temporary password</span>
+        <span className="setup__password-label">Your temporary PIN</span>
         <code>{result.admin.temporary_password}</code>
         <button type="button" className="btn btn--ghost btn--sm" onClick={copy}>
           {copied ? 'Copied' : 'Copy'}
@@ -295,12 +232,12 @@ function Created({ result }) {
         <strong>Write this down now.</strong>
         <span>
           It is shown once and stored nowhere you can read back. There is no other
-          administrator who could reset it for you.
+          admin who could reset it for you.
         </span>
       </p>
 
       <p className="muted small">
-        Sign in as <b>{result.admin.username}</b> with that password. The app will make you
+        Sign in as <b>{result.admin.username}</b> with that PIN. The app will make you
         choose your own straight away.
       </p>
 

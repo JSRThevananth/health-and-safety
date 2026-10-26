@@ -59,7 +59,7 @@ export default function UnitsPage() {
       {units.length === 0 ? (
         <div className="empty glass">
           <span className="empty__badge">Nothing yet</span>
-          <p>No units you can see. An omni admin can add one.</p>
+          <p>No units you can see. An admin can add one.</p>
         </div>
       ) : (
         <div className="unitlist">

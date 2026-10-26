@@ -233,7 +233,7 @@ test('a flood is capped, most overdue first', async () => {
 test('an admin can preview the digest on demand', async () => {
   const { call, raise, ids, state } = await withActions()
   await raise('Fit a door closer', day(-3), ids.inspector)
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
 
   const res = await call('/notifications/digest', { method: 'POST', token: omni })
   assert.equal(res.status, 200)

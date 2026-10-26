@@ -187,7 +187,7 @@ test('the open and overdue counts come through', async () => {
 test('the dashboard fetches it in one request', async () => {
   const { call, inspect, inspector, unitA } = await withInspections()
   await inspect(inspector, unitA, ['critical'])
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const res = await call('/kpis', { token })
   assert.equal(res.status, 200)

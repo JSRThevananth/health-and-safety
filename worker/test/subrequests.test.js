@@ -149,7 +149,7 @@ test('every request in the inspection flow stays inside the budget', async () =>
 test('the worst request in the whole flow is reported, so regressions are visible', async () => {
   const { peak, peakRequest } = await measure(async ({ db, call }) => {
     const fixture = await seedFixture(db)
-    const token = await signIn(call, 'omni', 'admin-password')
+    const token = await signIn(call, 'admin', 'admin-password')
 
     // The heaviest reads in the app: the full template, and an inspection
     // resolved against it.

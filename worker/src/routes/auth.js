@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { hashPassword, verifyPassword, DUMMY_HASH, MIN_PASSWORD_LENGTH } from '../crypto.js'
+import { hashPassword, verifyPassword, DUMMY_HASH, MIN_PIN_LENGTH } from '../crypto.js'
 import { now } from '../db.js'
 import { issueToken, requireAuth } from '../middleware/auth.js'
 import { validateBody } from '../middleware/validate.js'
@@ -26,7 +26,7 @@ const publicUser = (user, principal) => ({
   role: user.role,
   tenant_id: user.tenant_id,
   must_change_password: Boolean(user.must_change_password),
-  // null unit_ids means tenant-wide access (omni admin); the UI keys its nav off this.
+  // null unit_ids means tenant-wide access (admin); the UI keys its nav off this.
   unit_ids: principal.unitIds,
   permissions: [...principal.permissions].sort(),
 })
@@ -113,7 +113,7 @@ auth.get('/me', requireAuth, async (c) => {
 
 const changePasswordSchema = z.object({
   current_password: z.string().min(1),
-  new_password: z.string().min(MIN_PASSWORD_LENGTH, `Use at least ${MIN_PASSWORD_LENGTH} characters`),
+  new_password: z.string().min(MIN_PIN_LENGTH, `Use at least ${MIN_PIN_LENGTH} characters`),
 })
 
 /**

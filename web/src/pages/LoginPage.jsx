@@ -57,7 +57,7 @@ export default function LoginPage() {
           />
         </label>
         <label>
-          Password
+          PIN
           <input
             type="password"
             value={password}

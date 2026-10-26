@@ -239,7 +239,7 @@ test('an inspection renders against the version it was filled on, not the curren
   await call(`/inspections/${draft.id}/submit`, { method: 'POST', token })
 
   // The unit now rewrites its form and publishes v2.
-  const admin = await signIn(call, 'omni', 'admin-password')
+  const admin = await signIn(call, 'admin', 'admin-password')
   const newDraft = (await call(`/units/${unitA}/template/draft`, { method: 'POST', token: admin })).body
   await call(`/units/${unitA}/template/draft`, {
     method: 'PATCH',
@@ -257,7 +257,7 @@ test('an inspection renders against the version it was filled on, not the curren
 test('a unit with no published checklist cannot start an inspection', async () => {
   const { db, call } = await createHarness()
   const { tenantId } = await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const { id: emptyUnit } = await db.insert(
     "INSERT INTO units (tenant_id, name, code) VALUES (@t, 'Brand New Unit', 'NEW')",

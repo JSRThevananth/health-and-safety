@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { hashPassword, MIN_PASSWORD_LENGTH } from '../crypto.js'
+import { hashPassword, MIN_PIN_LENGTH } from '../crypto.js'
 import { validateBody } from '../middleware/validate.js'
 import { requirePermission } from '../middleware/auth.js'
 import { fail } from '../middleware/errors.js'
@@ -8,7 +8,7 @@ import { PERMISSIONS, ROLE_PRESETS, effectivePermissions } from '../services/per
 
 const users = new Hono()
 
-const ROLES = ['omni_admin', 'unit_admin', 'inspector', 'viewer']
+const ROLES = ['admin', 'inspector', 'viewer']
 
 const userSchema = z.object({
   username: z.string().min(3).max(50).regex(/^[A-Za-z0-9._-]+$/, 'Letters, digits, . _ - only'),
@@ -16,7 +16,7 @@ const userSchema = z.object({
   full_name: z.string().min(1).max(120),
   initials: z.string().max(12).default(''),
   role: z.enum(ROLES),
-  password: z.string().min(MIN_PASSWORD_LENGTH, `Use at least ${MIN_PASSWORD_LENGTH} characters`),
+  password: z.string().min(MIN_PIN_LENGTH, `Use at least ${MIN_PIN_LENGTH} characters`),
   unit_ids: z.array(z.coerce.number().int().positive()).default([]),
 })
 
@@ -25,7 +25,7 @@ const updateSchema = z.object({
   full_name: z.string().min(1).max(120).optional(),
   initials: z.string().max(12).optional(),
   role: z.enum(ROLES).optional(),
-  password: z.string().min(MIN_PASSWORD_LENGTH).optional(),
+  password: z.string().min(MIN_PIN_LENGTH).optional(),
   active: z.boolean().optional(),
   unit_ids: z.array(z.coerce.number().int().positive()).optional(),
 })
@@ -47,8 +47,8 @@ async function shape(db, user) {
     must_change_password: Boolean(user.must_change_password),
     password_changed_at: user.password_changed_at,
     unit_ids:
-      user.role === 'omni_admin'
-        ? null // omni admins are tenant-wide, not assigned to specific units
+      user.role === 'admin'
+        ? null // admins are tenant-wide, not assigned to specific units
         : await db.pluck('SELECT unit_id FROM user_units WHERE user_id = @id', { id: user.id }),
     permissions: [...(await effectivePermissions(db, user.id, user.role))].sort(),
   }
@@ -84,7 +84,7 @@ users.get('/roles', requirePermission('user.manage'), (c) =>
   c.json({
     roles: ROLES.map((role) => ({
       role,
-      tenant_wide: role === 'omni_admin',
+      tenant_wide: role === 'admin',
       default_permissions: ROLE_PRESETS[role],
     })),
     all_permissions: PERMISSIONS,
@@ -103,7 +103,7 @@ users.post('/', requirePermission('user.manage'), validateBody(userSchema), asyn
   if (taken) throw fail(409, `Username "${fields.username}" is taken`)
 
   // A non-admin with no units cannot see anything, which is a silent dead end.
-  if (fields.role !== 'omni_admin' && unit_ids.length === 0) {
+  if (fields.role !== 'admin' && unit_ids.length === 0) {
     throw fail(422, `Role "${fields.role}" must be assigned at least one unit`)
   }
   const unitError = await assertUnitsInTenant(db, tenantId, unit_ids)
@@ -118,7 +118,7 @@ users.post('/', requirePermission('user.manage'), validateBody(userSchema), asyn
   // The user row has to exist before its unit links can reference it, and D1 cannot
   // hold a transaction across the two. A user with no links is visibly broken rather
   // than silently over-privileged, so it fails safe; the links still go in together.
-  if (fields.role !== 'omni_admin') {
+  if (fields.role !== 'admin') {
     await db.batch(
       db.bulkInsert(
         'user_units',
@@ -148,11 +148,11 @@ users.patch('/:id', requirePermission('user.manage'), validateBody(updateSchema)
 
   // Guard against an admin removing their own access and locking the tenant out.
   const losingAdmin =
-    user.role === 'omni_admin' && ((next.role && next.role !== 'omni_admin') || active === false)
+    user.role === 'admin' && ((next.role && next.role !== 'admin') || active === false)
   if (losingAdmin) {
     const { n } = await db.get(
       `SELECT COUNT(*) AS n FROM users
-       WHERE tenant_id = @t AND role = 'omni_admin' AND active = 1 AND id <> @id`,
+       WHERE tenant_id = @t AND role = 'admin' AND active = 1 AND id <> @id`,
       { t: tenantId, id: user.id }
     )
     if (n === 0) throw fail(409, 'Cannot remove the last active admin for this tenant')
@@ -163,7 +163,7 @@ users.patch('/:id', requirePermission('user.manage'), validateBody(updateSchema)
     const unitError = await assertUnitsInTenant(db, tenantId, targetUnits)
     if (unitError) throw fail(422, unitError)
   }
-  if (next.role !== 'omni_admin') {
+  if (next.role !== 'admin') {
     const resulting =
       targetUnits ?? (await db.pluck('SELECT unit_id FROM user_units WHERE user_id = @id', { id: user.id }))
     if (resulting.length === 0) {
@@ -189,8 +189,8 @@ users.patch('/:id', requirePermission('user.manage'), validateBody(updateSchema)
     ),
   ]
 
-  // Omni admins are tenant-wide, so clear any stale unit assignments on promotion.
-  if (next.role === 'omni_admin') {
+  // Admins are tenant-wide, so clear any stale unit assignments on promotion.
+  if (next.role === 'admin') {
     statements.push(db.stmt('DELETE FROM user_units WHERE user_id = @id', { id: user.id }))
   } else if (targetUnits) {
     statements.push(db.stmt('DELETE FROM user_units WHERE user_id = @id', { id: user.id }))

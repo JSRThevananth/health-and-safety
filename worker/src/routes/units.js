@@ -13,7 +13,7 @@ const unitSchema = z.object({
   timezone: z.string().max(60).default('UTC'),
 })
 
-/** Omni admins see every unit in their tenant; everyone else only their assigned units. */
+/** Admins see every unit in their tenant; everyone else only their assigned units. */
 units.get('/', requirePermission('unit.view'), async (c) => {
   const db = c.get('db')
   const user = c.get('user')

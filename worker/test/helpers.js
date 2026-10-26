@@ -105,8 +105,8 @@ export async function seedFixture(db) {
     return id
   }
 
-  const omni = await addUser('omni', 'omni_admin', 'admin-password')
-  const manager = await addUser('lhr.manager', 'unit_admin', 'manager-password', [unitA])
+  const omni = await addUser('admin', 'admin', 'admin-password')
+  const manager = await addUser('lhr.manager', 'inspector', 'manager-password', [unitA])
   const inspector = await addUser('lhr.inspector', 'inspector', 'inspector-password', [unitA])
   const other = await addUser('dxb.inspector', 'inspector', 'inspector-password', [unitB])
 

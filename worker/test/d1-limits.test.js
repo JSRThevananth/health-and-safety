@@ -117,7 +117,7 @@ test('an id list is inlined, so a long list is not bound as parameters', async (
 test('a user with more than 100 units still gets a working unit list', async () => {
   const { db, call } = await createHarness()
   const { tenantId } = await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const { id: userId } = (
     await call('/users', {
@@ -163,7 +163,7 @@ test('a user with more than 100 units still gets a working unit list', async () 
 test('a 303-item checklist is seeded in one atomic batch', async () => {
   const { db, call } = await createHarness()
   const { tenantId } = await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const { id: unitId } = await db.insert(
     "INSERT INTO units (tenant_id, name, code) VALUES (@t, 'Fresh Unit', 'FRSH')",
@@ -183,7 +183,7 @@ test('a 303-item checklist is seeded in one atomic batch', async () => {
 test('a failed seed leaves no half-built draft behind', async () => {
   const { db, call } = await createHarness()
   const { tenantId } = await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const { id: unitId } = await db.insert(
     "INSERT INTO units (tenant_id, name, code) VALUES (@t, 'Doomed Unit', 'DOOM')",

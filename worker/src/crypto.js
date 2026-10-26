@@ -11,21 +11,7 @@ const encoder = new TextEncoder()
 
 /* ------------------------------------------------------------- passwords -- */
 
-/**
- * Minimum password length. No maximum - a long passphrase is never refused.
- *
- * Six, set deliberately low because the people typing it are wearing gloves on
- * a warehouse floor, and a rule they cannot satisfy is one they work around by
- * writing the password on the shelf.
- *
- * It is worth being plain about the trade. Against someone guessing at the
- * sign-in page this is fine: ten failures in fifteen minutes locks the attempt
- * out (LOGIN_MAX_FAILURES), so an online attack gets nowhere. Against someone
- * who has stolen the database it is weak - six characters is within reach of a
- * GPU, and the iteration count below is already a compromise with the
- * platform's CPU budget. That is the exposure this choice accepts.
- */
-export const MIN_PASSWORD_LENGTH = 6
+export const MIN_PIN_LENGTH = 4
 
 /**
  * PBKDF2-SHA256, in place of bcrypt.

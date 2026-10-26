@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../lib/api.js'
 import { useAuth } from '../lib/auth.jsx'
-import { MIN_PASSWORD_LENGTH } from '../lib/rules.js'
+import { MIN_PIN_LENGTH } from '../lib/rules.js'
 
 /**
  * Accounts, roles and unit access.
@@ -13,15 +13,13 @@ import { MIN_PASSWORD_LENGTH } from '../lib/rules.js'
  */
 
 const ROLE_LABEL = {
-  omni_admin: 'Omni admin',
-  unit_admin: 'Unit admin',
+  admin: 'Admin',
   inspector: 'Inspector',
   viewer: 'Viewer',
 }
 
 const ROLE_NOTE = {
-  omni_admin: 'Every unit in the organisation, and the only role that can manage people.',
-  unit_admin: 'Runs their own units end to end: form, recipients, sign-off, corrective actions.',
+  admin: 'Full access. Can manage users, checklists, inspections and corrective actions.',
   inspector: 'Walks the floor and fills in checklists. Can raise actions, not close them.',
   viewer: 'Read-only. For a visiting auditor.',
 }
@@ -62,7 +60,7 @@ export default function UsersPage() {
         </header>
         <div className="empty glass">
           <span className="empty__badge">Not for you</span>
-          <p>Managing accounts is an omni admin's job. Ask one of them.</p>
+          <p>Managing accounts is an admin's job. Ask one of them.</p>
         </div>
       </div>
     )
@@ -84,11 +82,10 @@ export default function UsersPage() {
 
       {issued && (
         <div className="notice notice--warn glass">
-          <strong>Temporary password for {issued.username}</strong>
+          <strong>Temporary PIN for {issued.username}</strong>
           <code className="setup__password-value">{issued.password}</code>
           <span>
-            Shown once. They are made to choose their own the first time they sign in — until
-            they do, this password can do nothing else.
+            Shown once. They must choose their own PIN the first time they sign in.
           </span>
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setIssued(null)}>
             Got it
@@ -113,16 +110,10 @@ export default function UsersPage() {
                   </small>
                 </span>
                 <span className="userlist__role">{ROLE_LABEL[person.role] || person.role}</span>
-                <span className="userlist__units muted small">
-                  {person.unit_ids === null
-                    ? 'All units'
-                    : person.unit_ids
-                        .map((id) => units.find((u) => u.id === id)?.code || id)
-                        .join(', ') || 'No units'}
-                </span>
+                <span className="userlist__units muted small">YUL</span>
                 {!person.active && <span className="userlist__flag">Disabled</span>}
                 {person.must_change_password && person.active && (
-                  <span className="userlist__flag userlist__flag--soft">Password not set</span>
+                  <span className="userlist__flag userlist__flag--soft">PIN not set</span>
                 )}
               </button>
             </li>
@@ -191,7 +182,7 @@ function PersonDialog({ person = null, units, roles, isSelf = false, onClose, on
     }))
 
   const preset = new Set(roles?.roles.find((r) => r.role === form.role)?.default_permissions || [])
-  const needsUnits = form.role !== 'omni_admin'
+  const needsUnits = false
 
   const save = async () => {
     setBusy(true)
@@ -229,7 +220,7 @@ function PersonDialog({ person = null, units, roles, isSelf = false, onClose, on
   }
 
   const passwordNeeded = !existing
-  const passwordTooShort = form.password.length > 0 && form.password.length < MIN_PASSWORD_LENGTH
+  const passwordTooShort = form.password.length > 0 && form.password.length < MIN_PIN_LENGTH
 
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label={existing ? 'Edit person' : 'Add a person'}>
@@ -299,7 +290,7 @@ function PersonDialog({ person = null, units, roles, isSelf = false, onClose, on
         )}
 
         <label className="field">
-          <span>{existing ? 'Reset their password' : 'Temporary password'}</span>
+          <span>{existing ? 'Reset their PIN' : 'Temporary PIN'}</span>
           <input
             type="text"
             value={form.password}
@@ -308,8 +299,7 @@ function PersonDialog({ person = null, units, roles, isSelf = false, onClose, on
             autoComplete="off"
           />
           <small className={passwordTooShort ? 'error' : 'muted'}>
-            At least {MIN_PASSWORD_LENGTH} characters. They choose their own on first sign-in;
-            until then this password unlocks nothing but that screen.
+            At least {MIN_PIN_LENGTH} digits. They choose their own on first sign-in.
           </small>
         </label>
 
@@ -374,7 +364,7 @@ function PersonDialog({ person = null, units, roles, isSelf = false, onClose, on
             disabled={
               busy ||
               passwordTooShort ||
-              (passwordNeeded && form.password.length < MIN_PASSWORD_LENGTH) ||
+              (passwordNeeded && form.password.length < MIN_PIN_LENGTH) ||
               (!existing && form.username.trim().length < 3) ||
               !form.full_name.trim() ||
               (needsUnits && form.unit_ids.length === 0)

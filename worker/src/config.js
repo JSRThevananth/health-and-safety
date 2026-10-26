@@ -18,12 +18,6 @@ export function readConfig(env) {
       // the next day.
       ttlSeconds: Number(env.JWT_TTL_SECONDS || 12 * 60 * 60),
     },
-    brevo: {
-      enabled: bool(env.BREVO_ENABLED, false),
-      apiKey: env.BREVO_API_KEY || '',
-      senderEmail: env.BREVO_SENDER_EMAIL || '',
-      senderName: env.BREVO_SENDER_NAME || 'QA Platform',
-    },
     storage: {
       // "drive", "r2" or "none".
       backend: (env.STORAGE_BACKEND || 'none').toLowerCase(),
@@ -37,19 +31,8 @@ export function readConfig(env) {
       driveCredentials: env.GDRIVE_CREDENTIALS_JSON || '',
       driveFolderId: env.GDRIVE_FOLDER_ID || '',
     },
-    // The daily chase for outstanding corrective actions. On by default once
-    // email works at all, because an action log nobody is reminded of is an
-    // action log nobody closes - but separable, since a customer may want
-    // reports emailed without the nagging.
-    digest: {
-      enabled: bool(env.DIGEST_ENABLED, true),
-    },
-    // How long a photo link inside an emailed report stays valid.
     reports: {
       photoLinkDays: Number(env.REPORT_PHOTO_LINK_DAYS || 30),
-      // Where the report's images point. Without it the links are relative and
-      // will not resolve in an email client.
-      publicUrl: (env.PUBLIC_URL || '').replace(/\/$/, ''),
     },
     login: {
       maxFailures: Number(env.LOGIN_MAX_FAILURES || 10),
@@ -72,12 +55,6 @@ export function configProblems(config) {
   } else if (config.auth.secret.length < 32) {
     problems.push('JWT_SECRET is too short; use at least 32 random characters')
   }
-  if (config.brevo.enabled && !config.brevo.apiKey) {
-    problems.push('BREVO_ENABLED is true but BREVO_API_KEY is not set')
-  }
-  if (config.brevo.enabled && !config.brevo.senderEmail) {
-    problems.push('BREVO_ENABLED is true but BREVO_SENDER_EMAIL is not set')
-  }
   if (config.storage.backend === 'drive') {
     const oauth =
       config.storage.driveClientId && config.storage.driveClientSecret && config.storage.driveRefreshToken
@@ -89,10 +66,6 @@ export function configProblems(config) {
     if (!config.storage.driveFolderId) {
       problems.push('STORAGE_BACKEND is "drive" but GDRIVE_FOLDER_ID is not set')
     }
-  }
-  // Reports email photo links, and a relative link does not resolve in an inbox.
-  if (!config.reports.publicUrl && config.environment === 'production') {
-    problems.push('PUBLIC_URL is not set, so photo links in emailed reports will not resolve')
   }
   return problems
 }

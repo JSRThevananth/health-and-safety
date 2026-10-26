@@ -63,7 +63,7 @@ export async function releaseAdminAccount(db, userId) {
 export const RELEASE_ADMIN_SQL = [
   ...SOFT_REFERENCES.map(
     ([table, column]) =>
-      `UPDATE ${table} SET ${column} = NULL WHERE ${column} IN (SELECT id FROM users WHERE role = 'omni_admin');`
+      `UPDATE ${table} SET ${column} = NULL WHERE ${column} IN (SELECT id FROM users WHERE role = 'admin');`
   ),
-  "DELETE FROM users WHERE role = 'omni_admin';",
+  "DELETE FROM users WHERE role = 'admin';",
 ].join(' ')

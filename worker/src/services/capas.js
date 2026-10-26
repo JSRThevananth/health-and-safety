@@ -55,7 +55,7 @@ export async function getCapa(db, id) {
 /**
  * List actions, scoped to units the caller can reach.
  *
- * `unitIds` null means an omni admin, who sees the whole tenant. Everyone else
+ * `unitIds` null means an admin, who sees the whole tenant. Everyone else
  * gets an explicit list, and an empty list returns nothing rather than
  * everything - the failure mode of a scoping bug should be seeing too little.
  */

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import Brand from './Brand.jsx'
 import ThemeToggle from './ThemeToggle.jsx'
-import UnitSwitcher from './UnitSwitcher.jsx'
 import { useAuth } from '../lib/auth.jsx'
 
 const NAV = [
@@ -10,7 +9,6 @@ const NAV = [
   { to: '/app/inspections', label: 'Inspections', permission: 'inspection.view' },
   { to: '/app/checklist', label: 'Checklist', permission: 'template.view' },
   { to: '/app/actions', label: 'Corrective actions', permission: 'capa.create' },
-  { to: '/app/units', label: 'Units', permission: 'unit.manage' },
   { to: '/app/users', label: 'Users', permission: 'user.manage' },
 ]
 
@@ -42,7 +40,6 @@ export default function AppShell({ children }) {
 
       <aside className={`shell__nav${open ? ' is-open' : ''}`}>
         <div className="shell__nav-brand"><Brand /></div>
-        <UnitSwitcher />
         <nav>
           {allowed.map((item) => (
             <NavLink

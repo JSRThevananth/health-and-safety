@@ -106,7 +106,7 @@ test('health names what a Drive deployment is still missing', async () => {
 
 test('recipients belong to a unit, and one unit never sees another’s', async () => {
   const { call, unitA, unitB } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
 
   await addRecipient(call, omni, unitA, 'lhr.station@example.com')
   await addRecipient(call, omni, unitB, 'dxb.station@example.com')
@@ -131,7 +131,7 @@ test('an inspector cannot change who receives their unit’s reports', async () 
 
 test('re-adding a removed recipient brings them back rather than failing', async () => {
   const { call, unitA } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
 
   const added = await addRecipient(call, omni, unitA, 'station@example.com')
   await call(`/units/${unitA}/recipients/${added.id}`, { method: 'DELETE', token: omni })
@@ -144,7 +144,7 @@ test('re-adding a removed recipient brings them back rather than failing', async
 
 test('the same address cannot be added twice for the same report', async () => {
   const { call, unitA } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
 
   const again = await call(`/units/${unitA}/recipients`, {
@@ -159,7 +159,7 @@ test('the same address cannot be added twice for the same report', async () => {
 
 test('the report retrieves the photo from Drive and sends it inside the PDF', async () => {
   const { call, unitA, inspector, draft, state } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
 
   const res = await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
@@ -230,7 +230,7 @@ test('a purged photo is reported as purged rather than as an error', async () =>
 
 test('a draft cannot be reported on', async () => {
   const { call, unitA, inspector } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
 
   const fresh = await call('/inspections/draft', {
@@ -256,7 +256,7 @@ test('sending with no recipients is refused rather than quietly succeeding', asy
 
 test('the sender picks from the unit’s list, and defaults are pre-ticked', async () => {
   const { call, unitA, inspector, draft, state } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
 
   const always = await addRecipient(call, omni, unitA, 'always@example.com')
   const sometimes = await addRecipient(call, omni, unitA, 'sometimes@example.com', {
@@ -291,7 +291,7 @@ test('the sender picks from the unit’s list, and defaults are pre-ticked', asy
 
 test('one unit’s report can never be addressed to another unit’s recipients', async () => {
   const { call, unitA, unitB, inspector, draft, state } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
 
   await addRecipient(call, omni, unitA, 'lhr@example.com')
   const dxb = await addRecipient(call, omni, unitB, 'dxb@example.com')
@@ -309,7 +309,7 @@ test('one unit’s report can never be addressed to another unit’s recipients'
 
 test('what was sent, and to whom, is on the record', async () => {
   const { call, unitA, inspector, draft } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
 
   await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
@@ -388,7 +388,7 @@ test('a PDF of another unit\'s inspection is not downloadable', async () => {
 
 test('a report with more photos than the platform allows still sends', async () => {
   const { call, unitA, inspector, draft, item } = await withSubmittedInspection()
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
 
   // Two past the cap. The byte budget would happily allow these - a phone

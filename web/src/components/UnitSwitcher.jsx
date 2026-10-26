@@ -2,7 +2,7 @@ import { useUnit } from '../lib/unitContext.jsx'
 
 /**
  * Scope selector. Only units the account already has are listed; "All units" appears
- * for an omni admin alone. A single-unit user gets a static label, not a control.
+ * for an admin alone. A single-unit user gets a static label, not a control.
  */
 export default function UnitSwitcher() {
   const { units, unitId, canSelectAll, select, loading } = useUnit()

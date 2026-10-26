@@ -29,7 +29,7 @@ test('a deployment with no signing secret issues no tokens at all', async () => 
 test('the seeded fixture publishes the full checklist for each unit', async () => {
   const { db, call } = await createHarness()
   const { unitA } = await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const res = await call(`/units/${unitA}/template`, { token })
   assert.equal(res.status, 200)

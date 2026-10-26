@@ -183,7 +183,7 @@ test('a reissued admin lands on a complete deployment, not a warning', async () 
 
   // What losing the temporary password looks like: the account is released so
   // a new one can be issued. Everything else stays.
-  const admin = await db.get("SELECT id FROM users WHERE role = 'omni_admin'")
+  const admin = await db.get("SELECT id FROM users WHERE role = 'admin'")
   const released = await releaseAdminAccount(db, admin.id)
   assert.equal(released.ok, true)
 

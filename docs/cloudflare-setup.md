@@ -15,7 +15,7 @@ awake, no second domain, no CORS.
                    ├── /api/*       the API            (the Worker)
                    ├── D1           the database       (SQLite, Cloudflare's)
                    ├── R2 or Drive  photo evidence
-                   └── Brevo        report email
+                   └── (email removed — not needed for single-unit)
 ```
 
 ## What it costs
@@ -28,7 +28,6 @@ Nothing, on the free plan, at your volume. The limits that matter:
 | D1 storage | gigabytes | an inspection is about 2 KB |
 | D1 rows written | a daily cap, **enforced since 1 Sep 2026** | an inspection writes a handful |
 | R2 | 10 GB — but **asks for a card on file** | see *Where photos go* below |
-| Brevo | 300 emails / day | one report per inspection |
 
 Check the current D1 numbers on Cloudflare's own limits page before you rely on
 them; the free tier was tightened in 2026 and may move again. Over the daily row
@@ -138,18 +137,7 @@ with it; the app will make you choose your own immediately.
 After this, `/api/setup` refuses forever. The 303-point checklist is installed
 and published for that unit.
 
-## 7. Turn on email (optional, do it when you want reports)
-
-```
-wrangler secret put BREVO_API_KEY
-wrangler secret put BREVO_SENDER_EMAIL
-```
-
-Then set `"BREVO_ENABLED": "true"` in `wrangler.jsonc` and deploy again. Until
-then, every email is recorded in the log and sent to nobody, which costs no
-quota — check `/api/notifications/log` to see what *would* have gone out.
-
-## 8. Turn on photo storage
+## 7. Turn on photo storage
 
 **With R2** (needs a card on file at Cloudflare):
 
@@ -219,8 +207,8 @@ run the tests or the migrations, so the workflow here is the one to use.
 wrangler d1 execute qa-platform --remote --command "SELECT code, name FROM units"
 ```
 
-**Someone forgot their password** — an omni admin resets it in the app under
-Users. The new password is temporary; they must choose their own at sign-in.
+**Someone forgot their PIN** — an admin resets it in the app under
+Users. The new PIN is temporary; they must choose their own at sign-in.
 
 **Watch it live** — `wrangler tail` streams every request and every
 `console.log` from the deployed Worker.

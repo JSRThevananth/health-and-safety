@@ -77,7 +77,7 @@ test('a successful sign-in clears the failure count', async () => {
   for (let i = 0; i < 5; i += 1) {
     await call('/auth/login', { method: 'POST', body: { username: 'omni', password: 'wrong' } })
   }
-  await signIn(call, 'omni', 'admin-password')
+  await signIn(call, 'admin', 'admin-password')
 
   const { n } = await db.get("SELECT COUNT(*) AS n FROM login_attempts WHERE username = 'omni'")
   assert.equal(n, 0)
@@ -86,7 +86,7 @@ test('a successful sign-in clears the failure count', async () => {
 test('a forged or expired token reaches nothing', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const real = await signIn(call, 'omni', 'admin-password')
+  const real = await signIn(call, 'admin', 'admin-password')
 
   for (const token of [undefined, 'not-a-token', `${real}x`, real.split('.').slice(0, 2).join('.')]) {
     const res = await call('/units', { token })
@@ -97,7 +97,7 @@ test('a forged or expired token reaches nothing', async () => {
 test('a token signed with a different secret is refused', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   // Same app, same database, different signing key.
   const other = await createHarness({ env: { JWT_SECRET: 'a-completely-different-secret-value-here' } })
@@ -198,7 +198,7 @@ test('changing the password unlocks the app and the old one stops working', asyn
 test('a password shorter than the minimum is refused', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   // One short, derived from the constant rather than typed out: the last time
   // this was a literal, changing the minimum left a test asserting the old one.
@@ -214,7 +214,7 @@ test('a password shorter than the minimum is refused', async () => {
 test('a long passphrase is accepted: there is no maximum', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   // Somebody pasting a generated passphrase should never be told it is too
   // long. PBKDF2 hashes the password into a fixed-size key, so length costs
@@ -228,13 +228,13 @@ test('a long passphrase is accepted: there is no maximum', async () => {
   assert.equal(res.status, 200, JSON.stringify(res.body))
 
   // And it actually works as a credential afterwards.
-  assert.ok(await signIn(call, 'omni', long))
+  assert.ok(await signIn(call, 'admin', long))
 })
 
 test('exactly the minimum is accepted', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const res = await call('/auth/change-password', {
     method: 'POST',

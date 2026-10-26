@@ -3,15 +3,8 @@ import { api } from '../lib/api.js'
 import { useAuth } from '../lib/auth.jsx'
 import Brand from '../components/Brand.jsx'
 import ThemeToggle from '../components/ThemeToggle.jsx'
-import { MIN_PASSWORD_LENGTH } from '../lib/rules.js'
+import { MIN_PIN_LENGTH } from '../lib/rules.js'
 
-
-
-/**
- * Shown when the signed-in account still holds an admin-issued temporary password.
- * The API blocks every other route until this succeeds, so this is not a screen the
- * client may choose to skip.
- */
 export default function ChangePasswordPage() {
   const { user, refresh, signOut } = useAuth()
   const [current, setCurrent] = useState('')
@@ -20,10 +13,10 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const tooShort = next.length > 0 && next.length < MIN_PASSWORD_LENGTH
+  const tooShort = next.length > 0 && next.length < MIN_PIN_LENGTH
   const mismatch = confirm.length > 0 && next !== confirm
   const sameAsCurrent = next.length > 0 && next === current
-  const canSubmit = next.length >= MIN_PASSWORD_LENGTH && next === confirm && !sameAsCurrent && current
+  const canSubmit = next.length >= MIN_PIN_LENGTH && next === confirm && !sameAsCurrent && current
 
   const submit = async (event) => {
     event.preventDefault()
@@ -47,15 +40,15 @@ export default function ChangePasswordPage() {
       <form className="login__card" onSubmit={submit}>
         <div className="login__head">
           <Brand />
-          <h1>Choose your password</h1>
+          <h1>Choose your PIN</h1>
           <p className="muted small">
-            Signed in as <strong>{user.full_name}</strong>. Replace the temporary password
+            Signed in as <strong>{user.full_name}</strong>. Replace the temporary PIN
             you were issued before continuing.
           </p>
         </div>
 
         <label>
-          Temporary password
+          Temporary PIN
           <input
             type="password"
             value={current}
@@ -67,7 +60,7 @@ export default function ChangePasswordPage() {
         </label>
 
         <label>
-          New password
+          New PIN
           <input
             type="password"
             value={next}
@@ -77,13 +70,13 @@ export default function ChangePasswordPage() {
           />
           <span className={`hint${tooShort || sameAsCurrent ? ' hint--bad' : ''}`}>
             {sameAsCurrent
-              ? 'Must be different from the temporary password'
-              : `At least ${MIN_PASSWORD_LENGTH} characters`}
+              ? 'Must be different from the temporary PIN'
+              : `At least ${MIN_PIN_LENGTH} digits`}
           </span>
         </label>
 
         <label>
-          Confirm new password
+          Confirm new PIN
           <input
             type="password"
             value={confirm}
@@ -91,13 +84,13 @@ export default function ChangePasswordPage() {
             autoComplete="new-password"
             required
           />
-          {mismatch && <span className="hint hint--bad">Passwords do not match</span>}
+          {mismatch && <span className="hint hint--bad">PINs do not match</span>}
         </label>
 
         {error && <p className="error">{error}</p>}
 
         <button type="submit" className="btn btn--primary" disabled={busy || !canSubmit}>
-          {busy ? 'Saving…' : 'Set password and continue'}
+          {busy ? 'Saving…' : 'Set PIN and continue'}
         </button>
 
         <div className="login__foot">

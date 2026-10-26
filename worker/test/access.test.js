@@ -6,7 +6,7 @@ test('an omni admin sees every unit; a unit user sees only their own', async () 
   const { db, call } = await createHarness()
   await seedFixture(db)
 
-  const omni = await call('/units', { token: await signIn(call, 'omni', 'admin-password') })
+  const omni = await call('/units', { token: await signIn(call, 'admin', 'admin-password') })
   assert.equal(omni.body.length, 2)
 
   const inspector = await call('/units', {
@@ -70,7 +70,7 @@ test('a unit admin runs their own unit but cannot create users', async () => {
 test('a per-user grant adds one capability without changing the role', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
 
   const inspectorId = (await db.get("SELECT id FROM users WHERE username = 'lhr.inspector'")).id
   const granted = await call(`/users/${inspectorId}/permissions`, {
@@ -88,7 +88,7 @@ test('a per-user grant adds one capability without changing the role', async () 
 test('clearing an override falls back to the role preset', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const omni = await signIn(call, 'omni', 'admin-password')
+  const omni = await signIn(call, 'admin', 'admin-password')
   const inspectorId = (await db.get("SELECT id FROM users WHERE username = 'lhr.inspector'")).id
 
   await call(`/users/${inspectorId}/permissions`, {
@@ -109,7 +109,7 @@ test('clearing an override falls back to the role preset', async () => {
 test('a user cannot be attached to a unit in another tenant', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const { id: otherTenant } = await db.insert(
     "INSERT INTO tenants (name, slug) VALUES ('Rival Catering', 'rival')"
@@ -138,7 +138,7 @@ test('a user cannot be attached to a unit in another tenant', async () => {
 test('the last active admin cannot be demoted or deactivated', async () => {
   const { db, call } = await createHarness()
   const { unitA } = await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const omniId = (await db.get("SELECT id FROM users WHERE username = 'omni'")).id
 
@@ -156,7 +156,7 @@ test('the last active admin cannot be demoted or deactivated', async () => {
 test('a non-admin role must be given at least one unit', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
 
   const res = await call('/users', {
     method: 'POST',
@@ -176,10 +176,10 @@ test('a non-admin role must be given at least one unit', async () => {
 test('promoting a user to omni admin clears their stale unit assignments', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
-  const token = await signIn(call, 'omni', 'admin-password')
+  const token = await signIn(call, 'admin', 'admin-password')
   const managerId = (await db.get("SELECT id FROM users WHERE username = 'lhr.manager'")).id
 
-  const res = await call(`/users/${managerId}`, { method: 'PATCH', token, body: { role: 'omni_admin' } })
+  const res = await call(`/users/${managerId}`, { method: 'PATCH', token, body: { role: 'admin' } })
   assert.equal(res.status, 200)
   assert.equal(res.body.unit_ids, null)
 

@@ -16,7 +16,7 @@ const setupSchema = z.object({
     .max(40)
     .regex(/^[a-z0-9-]+$/, 'Lower-case letters, digits and hyphens only')
     .default('main'),
-  admin_username: z.string().min(3).max(50).regex(/^[A-Za-z0-9._-]+$/).default('omni'),
+  admin_username: z.string().min(3).max(50).regex(/^[A-Za-z0-9._-]+$/).default('admin'),
   admin_email: z.string().email(),
   admin_name: z.string().min(1).max(120),
   unit_name: z.string().min(1).max(120),
@@ -46,7 +46,7 @@ setup.post('/', validateBody(setupSchema), async (c) => {
 
   // An admin account is what "already set up" means. A tenant on its own is the
   // wreckage of an interrupted run, and the whole point is to recover from it.
-  const { n: admins } = await db.get("SELECT COUNT(*) AS n FROM users WHERE role = 'omni_admin'")
+  const { n: admins } = await db.get("SELECT COUNT(*) AS n FROM users WHERE role = 'admin'")
   if (admins > 0) {
     throw fail(409, 'This deployment is already set up. Use the admin account you created.')
   }
@@ -86,7 +86,7 @@ setup.post('/', validateBody(setupSchema), async (c) => {
 
   await db.insert(
     `INSERT INTO users (tenant_id, username, email, full_name, initials, role, password_hash)
-     VALUES (@t, @username, @email, @name, @initials, 'omni_admin', @hash)`,
+     VALUES (@t, @username, @email, @name, @initials, 'admin', @hash)`,
     {
       t: tenantId,
       username: body.admin_username,
@@ -130,7 +130,7 @@ setup.post('/checklist', async (c) => {
   if (!unit) throw fail(409, 'Create the organisation first.')
 
   const admin = await db.get(
-    "SELECT id FROM users WHERE tenant_id = @t AND role = 'omni_admin' ORDER BY id LIMIT 1",
+    "SELECT id FROM users WHERE tenant_id = @t AND role = 'admin' ORDER BY id LIMIT 1",
     { t: unit.tenant_id }
   )
   if (!admin) throw fail(409, 'Create the organisation first.')
@@ -169,7 +169,7 @@ setup.post('/checklist', async (c) => {
 /** What the deployment still needs. The sign-in page asks this. */
 setup.get('/status', async (c) => {
   const db = c.get('db')
-  const { n: admins } = await db.get("SELECT COUNT(*) AS n FROM users WHERE role = 'omni_admin'")
+  const { n: admins } = await db.get("SELECT COUNT(*) AS n FROM users WHERE role = 'admin'")
   const unit = await db.get('SELECT * FROM units ORDER BY id LIMIT 1')
   const hasChecklist = unit ? Boolean(await getPublishedTemplate(db, unit.id)) : false
 
