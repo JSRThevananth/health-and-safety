@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHarness, seedFixture, signIn } from './helpers.js'
-import { hashPassword, MIN_PASSWORD_LENGTH } from '../src/crypto.js'
+import { hashPassword, MIN_PIN_LENGTH } from '../src/crypto.js'
 
 test('a correct password returns a token and the caller’s own permissions', async () => {
   const { db, call } = await createHarness()
@@ -25,7 +25,7 @@ test('a wrong password is refused and says nothing about which part was wrong', 
 
   const wrongPassword = await call('/auth/login', {
     method: 'POST',
-    body: { username: 'omni', password: 'not-it' },
+    body: { username: 'admin', password: 'not-it' },
   })
   const noSuchUser = await call('/auth/login', {
     method: 'POST',
@@ -54,7 +54,7 @@ test('repeated failures lock the account out, and the lockout is counted in the 
   await seedFixture(db)
 
   for (let i = 0; i < 10; i += 1) {
-    const res = await call('/auth/login', { method: 'POST', body: { username: 'omni', password: 'wrong' } })
+    const res = await call('/auth/login', { method: 'POST', body: { username: 'admin', password: 'wrong' } })
     assert.equal(res.status, 401, `attempt ${i + 1} should be refused, not throttled`)
   }
 
@@ -62,7 +62,7 @@ test('repeated failures lock the account out, and the lockout is counted in the 
   // the point: an attacker who finds it on attempt 11 still cannot use it.
   const throttled = await call('/auth/login', {
     method: 'POST',
-    body: { username: 'omni', password: 'admin-password' },
+    body: { username: 'admin', password: 'admin-password' },
   })
   assert.equal(throttled.status, 429)
 
@@ -75,11 +75,11 @@ test('a successful sign-in clears the failure count', async () => {
   await seedFixture(db)
 
   for (let i = 0; i < 5; i += 1) {
-    await call('/auth/login', { method: 'POST', body: { username: 'omni', password: 'wrong' } })
+    await call('/auth/login', { method: 'POST', body: { username: 'admin', password: 'wrong' } })
   }
   await signIn(call, 'admin', 'admin-password')
 
-  const { n } = await db.get("SELECT COUNT(*) AS n FROM login_attempts WHERE username = 'omni'")
+  const { n } = await db.get("SELECT COUNT(*) AS n FROM login_attempts WHERE username = 'admin'")
   assert.equal(n, 0)
 })
 
@@ -126,10 +126,10 @@ test('a bcrypt hash from the Node build is refused rather than silently accepted
   await seedFixture(db)
   await db.run(
     `UPDATE users SET password_hash = '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
-     WHERE username = 'omni'`
+     WHERE username = 'admin'`
   )
 
-  const res = await call('/auth/login', { method: 'POST', body: { username: 'omni', password: 'secret' } })
+  const res = await call('/auth/login', { method: 'POST', body: { username: 'admin', password: 'secret' } })
   assert.equal(res.status, 401)
 })
 
@@ -205,10 +205,10 @@ test('a password shorter than the minimum is refused', async () => {
   const res = await call('/auth/change-password', {
     method: 'POST',
     token,
-    body: { current_password: 'admin-password', new_password: 'x'.repeat(MIN_PASSWORD_LENGTH - 1) },
+    body: { current_password: 'admin-password', new_password: 'x'.repeat(MIN_PIN_LENGTH - 1) },
   })
   assert.equal(res.status, 422)
-  assert.match(JSON.stringify(res.body), new RegExp(`${MIN_PASSWORD_LENGTH} characters`))
+  assert.match(JSON.stringify(res.body), new RegExp(`${MIN_PIN_LENGTH} characters`))
 })
 
 test('a long passphrase is accepted: there is no maximum', async () => {
@@ -239,7 +239,7 @@ test('exactly the minimum is accepted', async () => {
   const res = await call('/auth/change-password', {
     method: 'POST',
     token,
-    body: { current_password: 'admin-password', new_password: 'a'.repeat(MIN_PASSWORD_LENGTH) },
+    body: { current_password: 'admin-password', new_password: 'a'.repeat(MIN_PIN_LENGTH) },
   })
   assert.equal(res.status, 200, JSON.stringify(res.body))
 })

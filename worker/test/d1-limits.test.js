@@ -148,7 +148,7 @@ test('a user with more than 100 units still gets a working unit list', async () 
   // tests the unit list rather than the first-password screen.
   await db.run(
     `UPDATE users
-     SET password_hash = (SELECT password_hash FROM users WHERE username = 'omni'),
+     SET password_hash = (SELECT password_hash FROM users WHERE username = 'admin'),
          must_change_password = 0
      WHERE id = @id`,
     { id: userId }

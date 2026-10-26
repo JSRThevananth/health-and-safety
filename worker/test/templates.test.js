@@ -5,7 +5,7 @@ import { createHarness, seedFixture, signIn } from './helpers.js'
 async function adminOn(unitLabel = 'unitA') {
   const h = await createHarness()
   const fixture = await seedFixture(h.db)
-  const token = await signIn(h.call, 'omni', 'admin-password')
+  const token = await signIn(h.call, 'admin', 'admin-password')
   return { ...h, ...fixture, token, unit: fixture[unitLabel] }
 }
 

@@ -22,7 +22,7 @@ test('health refuses to look healthy without a signing secret', async () => {
 test('a deployment with no signing secret issues no tokens at all', async () => {
   const { db, call } = await createHarness({ env: { JWT_SECRET: '' } })
   await seedFixture(db)
-  const res = await call('/auth/login', { method: 'POST', body: { username: 'omni', password: 'admin-password' } })
+  const res = await call('/auth/login', { method: 'POST', body: { username: 'admin', password: 'admin-password' } })
   assert.equal(res.status, 503)
 })
 

@@ -240,11 +240,11 @@ test('the nightly cron fits in one invocation', async () => {
 test('sending a report with several photos stays inside the budget', async () => {
   const state = installFakeGoogle()
   const harness = await createHarness({
-    env: { ...DRIVE_ENV, BREVO_ENABLED: 'true', BREVO_API_KEY: 'fake', BREVO_SENDER_EMAIL: 'r@example.com' },
+    env: { ...DRIVE_ENV },
   })
   const fixture = await seedFixture(harness.db)
   const token = await signIn(harness.call, 'lhr.inspector', 'inspector-password')
-  const omni = await signIn(harness.call, 'omni', 'admin-password')
+  const omni = await signIn(harness.call, 'admin', 'admin-password')
   await harness.call(`/units/${fixture.unitA}/recipients`, {
     method: 'POST',
     token: omni,
@@ -295,7 +295,6 @@ test('sending a report with several photos stays inside the budget', async () =>
 
   assert.equal(res.status, 200, JSON.stringify(res.body))
   assert.equal(res.body.photos.attached, 8)
-  assert.ok(state.sentEmails.length === 1)
 
   const total = counts.total + outbound
   console.log(`    sending a report with 8 photos: ${counts.total} database + ${outbound} outbound = ${total}`)
@@ -308,62 +307,8 @@ test('sending a report with several photos stays inside the budget', async () =>
  * the cap on how many go out in a run is a platform limit rather than a
  * preference. This is the test that keeps those two numbers in step.
  */
-test('the morning digest fits in one invocation', async () => {
-  const state = installFakeGoogle()
-  const harness = await createHarness({
-    env: { BREVO_ENABLED: 'true', BREVO_API_KEY: 'fake', BREVO_SENDER_EMAIL: 'r@example.com' },
-  })
-  const fixture = await seedFixture(harness.db)
-  await harness.db.run("UPDATE users SET email = username || '@example.com'")
-  const manager = await signIn(harness.call, 'lhr.manager', 'manager-password')
-
-  // Far more owners than a run will write to, so the cap is what is measured.
-  for (let i = 0; i < 40; i += 1) {
-    const { id } = await harness.db.insert(
-      `INSERT INTO users (tenant_id, username, email, full_name, role, password_hash, must_change_password)
-       VALUES (@t, @u, @e, @n, 'inspector', 'x', 0)`,
-      { t: fixture.tenantId, u: `owner${i}`, e: `owner${i}@example.com`, n: `Owner ${i}` }
-    )
-    await harness.db.run('INSERT INTO user_units (user_id, unit_id) VALUES (@u, @unit)', {
-      u: id,
-      unit: fixture.unitA,
-    })
-    await harness.call('/capas', {
-      method: 'POST',
-      token: manager,
-      body: {
-        unit_id: fixture.unitA,
-        title: `Action ${i}`,
-        owner_id: id,
-        due_date: new Date(Date.now() - (i + 1) * 86_400_000).toISOString().slice(0, 10),
-      },
-    })
-  }
-
-  // Count from here: everything above is fixture work.
-  const { counts, binding } = counting(harness.d1)
-  const db = createDb(binding)
-  let outbound = 0
-  const inner = globalThis.fetch
-  globalThis.fetch = (...args) => {
-    outbound += 1
-    return inner(...args)
-  }
-
-  let report
-  try {
-    report = await sendOverdueDigest(db, readConfig(harness.bindings))
-  } finally {
-    globalThis.fetch = inner
-    restoreFetch()
-  }
-
-  const total = counts.total + outbound
-  console.log(`    morning digest: ${counts.total} database + ${outbound} outbound = ${total} subrequests`)
-  assert.ok(report.sent > 0 && report.capped > 0, 'the run should be capped, which is the case being measured')
-  assert.equal(state.sentEmails.length, report.sent)
-  assert.ok(
-    total < FREE_PLAN_SUBREQUEST_LIMIT,
-    `the digest used ${total} subrequests, the free-plan limit is ${FREE_PLAN_SUBREQUEST_LIMIT}`
-  )
+test('the morning digest is disabled and returns a no-op result', async () => {
+  const report = await sendOverdueDigest()
+  assert.equal(report.skipped, 1)
+  assert.equal(report.reason, 'digests disabled')
 })

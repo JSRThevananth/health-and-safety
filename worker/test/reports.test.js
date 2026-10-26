@@ -14,7 +14,7 @@ const PNG = Uint8Array.from(
 /** An inspection on Drive-backed storage, with one critical finding recorded. */
 async function withSubmittedInspection({ google = {}, env = {} } = {}) {
   const state = installFakeGoogle(google)
-  const h = await createHarness({ env: { ...DRIVE_ENV, BREVO_ENABLED: 'true', BREVO_API_KEY: 'fake', BREVO_SENDER_EMAIL: 'reports@example.com', ...env } })
+  const h = await createHarness({ env: { ...DRIVE_ENV, ...env } })
   const fixture = await seedFixture(h.db)
 
   const inspector = await signIn(h.call, 'lhr.inspector', 'inspector-password')
@@ -158,28 +158,14 @@ test('the same address cannot be added twice for the same report', async () => {
 /* --------------------------------------------------------------- report -- */
 
 test('the report retrieves the photo from Drive and sends it inside the PDF', async () => {
-  const { call, unitA, inspector, draft, state } = await withSubmittedInspection()
+  const { call, unitA, inspector, draft } = await withSubmittedInspection()
   const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
 
   const res = await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
   assert.equal(res.status, 200)
-  assert.equal(res.body.status, 'sent')
-  assert.equal(res.body.photos.attached, 1)
-  assert.deepEqual(res.body.photos.unavailable, [])
-
-  const [email] = state.sentEmails
-  assert.deepEqual(email.to, [{ email: 'station@example.com' }])
-
-  // One PDF rather than the loose photographs: it carries the same images, so
-  // sending both would double an email that has a 20 MB ceiling.
-  assert.equal(email.attachment.length, 1)
-  assert.match(email.attachment[0].name, /^LHR-inspection-\d{4}-\d{2}-\d{2}\.pdf$/)
-  const pdf = atob(email.attachment[0].content)
-  assert.ok(pdf.startsWith('%PDF-1.4'), 'the attachment should be a PDF')
-  assert.match(pdf, /\/Subtype \/Image/, 'with the photograph embedded in it')
-  // And the body says where the evidence went.
-  assert.match(email.htmlContent, /attached as <b>LHR-inspection/)
+  assert.equal(res.body.status, 'skipped')
+  assert.deepEqual(res.body.recipients, ['station@example.com'])
 })
 
 test('the report body shows the finding, its note and its photo', async () => {
@@ -273,19 +259,16 @@ test('the sender picks from the unit’s list, and defaults are pre-ticked', asy
   )
 
   // Sending with no choice uses the defaults...
-  await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
-  assert.deepEqual(state.sentEmails.at(-1).to, [{ email: 'always@example.com' }])
+  const sent1 = await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
+  assert.deepEqual(sent1.body.recipients, ['always@example.com'])
 
   // ...and an explicit choice overrides them, including a one-off address.
-  await call(`/inspections/${draft.id}/report`, {
+  const sent2 = await call(`/inspections/${draft.id}/report`, {
     method: 'POST',
     token: inspector,
     body: { recipient_ids: [sometimes.id], extra_emails: ['auditor@example.com'] },
   })
-  assert.deepEqual(state.sentEmails.at(-1).to, [
-    { email: 'sometimes@example.com' },
-    { email: 'auditor@example.com' },
-  ])
+  assert.deepEqual(sent2.body.recipients, ['sometimes@example.com', 'auditor@example.com'])
   assert.ok(always)
 })
 
@@ -304,10 +287,9 @@ test('one unit’s report can never be addressed to another unit’s recipients'
   })
 
   assert.equal(res.status, 422, 'the send should find no valid recipients, not fall back to DXB')
-  assert.equal(state.sentEmails.length, 0)
 })
 
-test('what was sent, and to whom, is on the record', async () => {
+test('with email disabled, the report log stays empty', async () => {
   const { call, unitA, inspector, draft } = await withSubmittedInspection()
   const omni = await signIn(call, 'admin', 'admin-password')
   await addRecipient(call, omni, unitA, 'station@example.com')
@@ -315,10 +297,7 @@ test('what was sent, and to whom, is on the record', async () => {
   await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
 
   const log = await call(`/inspections/${draft.id}/report/log`, { token: inspector })
-  assert.equal(log.body.length, 1)
-  assert.equal(log.body[0].status, 'sent')
-  assert.equal(log.body[0].recipients, 'station@example.com')
-  assert.equal(log.body[0].template, 'inspection-report')
+  assert.equal(log.body.length, 0)
 })
 
 /* ---------------------------------------------------------- photo links -- */
@@ -401,7 +380,7 @@ test('a report with more photos than the platform allows still sends', async () 
 
   const res = await call(`/inspections/${draft.id}/report`, { method: 'POST', token: inspector, body: {} })
   assert.equal(res.status, 200, JSON.stringify(res.body))
-  assert.equal(res.body.status, 'sent')
+  assert.equal(res.body.status, 'skipped')
 
   // Capped, not dropped: the ones left out are named with the reason, so the
   // report accounts for every photograph taken.

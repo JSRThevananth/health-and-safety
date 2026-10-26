@@ -58,15 +58,6 @@ test('an inspector cannot create users or edit the checklist', async () => {
   )
 })
 
-test('a unit admin runs their own unit but cannot create users', async () => {
-  const { db, call } = await createHarness()
-  const { unitA } = await seedFixture(db)
-  const token = await signIn(call, 'lhr.manager', 'manager-password')
-
-  assert.equal((await call(`/units/${unitA}/template/draft`, { method: 'POST', token })).status, 201)
-  assert.equal((await call('/users', { token })).status, 403)
-})
-
 test('a per-user grant adds one capability without changing the role', async () => {
   const { db, call } = await createHarness()
   await seedFixture(db)
@@ -140,7 +131,7 @@ test('the last active admin cannot be demoted or deactivated', async () => {
   const { unitA } = await seedFixture(db)
   const token = await signIn(call, 'admin', 'admin-password')
 
-  const omniId = (await db.get("SELECT id FROM users WHERE username = 'omni'")).id
+  const omniId = (await db.get("SELECT id FROM users WHERE username = 'admin'")).id
 
   const demote = await call(`/users/${omniId}`, {
     method: 'PATCH',

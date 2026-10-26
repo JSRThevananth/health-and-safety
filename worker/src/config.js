@@ -32,6 +32,7 @@ export function readConfig(env) {
       driveFolderId: env.GDRIVE_FOLDER_ID || '',
     },
     reports: {
+      publicUrl: (env.PUBLIC_URL || '').replace(/\/+$/, ''),
       photoLinkDays: Number(env.REPORT_PHOTO_LINK_DAYS || 30),
     },
     login: {

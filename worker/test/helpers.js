@@ -110,6 +110,15 @@ export async function seedFixture(db) {
   const inspector = await addUser('lhr.inspector', 'inspector', 'inspector-password', [unitA])
   const other = await addUser('dxb.inspector', 'inspector', 'inspector-password', [unitB])
 
+  // The manager was a unit_admin in the old role model. In the simplified model
+  // they are an inspector with elevated permissions for sign-off and CAPA work.
+  for (const perm of ['capa.assign', 'capa.close', 'inspection.sign', 'inspection.delete', 'recipient.manage']) {
+    await db.run(
+      'INSERT INTO user_permissions (user_id, permission, granted) VALUES (@u, @p, 1)',
+      { u: manager, p: perm }
+    )
+  }
+
   await installLibrary(db, tenantId)
   for (const unitId of [unitA, unitB]) {
     const draft = await createDraft(db, unitId, tenantId, omni)

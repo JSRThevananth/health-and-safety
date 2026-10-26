@@ -22,7 +22,7 @@ test('first-run setup creates the organisation, the unit and the admin', async (
   const res = await call('/setup', { method: 'POST', body: FIRST_RUN })
 
   assert.equal(res.status, 201)
-  assert.equal(res.body.admin.username, 'omni')
+  assert.equal(res.body.admin.username, 'admin')
   assert.ok(res.body.admin.temporary_password.length >= 18)
   // The checklist is a second request, because the two together exceed the
   // 10ms of CPU a Worker gets on the free plan.
@@ -31,7 +31,7 @@ test('first-run setup creates the organisation, the unit and the admin', async (
   // The account works, and insists on a password of the user's own.
   const login = await call('/auth/login', {
     method: 'POST',
-    body: { username: 'omni', password: res.body.admin.temporary_password },
+    body: { username: 'admin', password: res.body.admin.temporary_password },
   })
   assert.equal(login.status, 200)
   assert.equal(login.body.user.must_change_password, true)
@@ -67,7 +67,7 @@ test('the caller cannot choose the first password', async () => {
 
   const chosen = await call('/auth/login', {
     method: 'POST',
-    body: { username: 'omni', password: 'password123' },
+    body: { username: 'admin', password: 'password123' },
   })
   assert.equal(chosen.status, 401)
 })
@@ -97,7 +97,7 @@ test('the checklist is installed by its own request, and is live immediately', a
   // start an inspection against the checklist that was installed.
   const login = await call('/auth/login', {
     method: 'POST',
-    body: { username: 'omni', password: temporary },
+    body: { username: 'admin', password: temporary },
   })
   assert.equal(login.status, 200)
 
@@ -200,7 +200,7 @@ test('a reissued admin lands on a complete deployment, not a warning', async () 
   // The new password works, and the unit still has its 303 points.
   const login = await call('/auth/login', {
     method: 'POST',
-    body: { username: 'omni', password: again.body.admin.temporary_password },
+    body: { username: 'admin', password: again.body.admin.temporary_password },
   })
   assert.equal(login.status, 200)
   const { n } = await db.get('SELECT COUNT(*) AS n FROM library_items')
