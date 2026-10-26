@@ -1,0 +1,104 @@
+import { getDb } from '../db/index.js'
+
+/**
+ * Every capability in the app. Routes name one of these rather than checking roles
+ * directly, so an admin can tune a single user's access without a code change.
+ */
+export const PERMISSIONS = Object.freeze([
+  'unit.view',
+  'unit.manage',
+  'template.view',
+  'template.edit',
+  'inspection.view',
+  'inspection.create',
+  'inspection.sign',
+  'inspection.delete',
+  'capa.create',
+  'capa.assign',
+  'capa.close',
+  'recipient.manage',
+  'user.manage',
+  'report.view',
+  'report.export',
+  'message.send',
+  'attachment.upload',
+  'attachment.delete',
+  'audit.view',
+])
+
+const ALL = new Set(PERMISSIONS)
+
+/** Default capability set per role. Admin is handled separately - it gets everything. */
+export const ROLE_PRESETS = Object.freeze({
+  omni_admin: PERMISSIONS,
+
+  // The unit's H&S manager: runs their own unit end to end, including its form and
+  // its report recipients, but cannot create users or reach another unit.
+  unit_admin: [
+    'unit.view',
+    'template.view',
+    'template.edit',
+    'inspection.view',
+    'inspection.create',
+    'inspection.sign',
+    'capa.create',
+    'capa.assign',
+    'capa.close',
+    'recipient.manage',
+    'report.view',
+    'report.export',
+    'message.send',
+    'attachment.upload',
+    'attachment.delete',
+  ],
+
+  // Walks the floor and fills in checklists. Cannot sign off or close its own findings.
+  inspector: [
+    'unit.view',
+    'template.view',
+    'inspection.view',
+    'inspection.create',
+    'capa.create',
+    'report.view',
+    'message.send',
+    'attachment.upload',
+  ],
+
+  // Read-only stakeholder, e.g. a visiting auditor.
+  viewer: ['unit.view', 'template.view', 'inspection.view', 'report.view'],
+})
+
+/**
+ * Resolve a user's effective permissions: their role preset, plus explicit grants and
+ * minus explicit revokes from user_permissions.
+ */
+export function effectivePermissions(userId, role) {
+  const base = new Set(ROLE_PRESETS[role] || [])
+  const overrides = getDb()
+    .prepare('SELECT permission, granted FROM user_permissions WHERE user_id = ?')
+    .all(userId)
+
+  for (const { permission, granted } of overrides) {
+    if (!ALL.has(permission)) continue // ignore stale names from an older release
+    if (granted) base.add(permission)
+    else base.delete(permission)
+  }
+  return base
+}
+
+/**
+ * Units a user may act on. Admins are tenant-wide, so they return null meaning
+ * "no restriction" - callers must treat null as all units within the tenant.
+ */
+export function accessibleUnitIds(userId, role) {
+  if (role === 'omni_admin') return null
+  return getDb()
+    .prepare('SELECT unit_id FROM user_units WHERE user_id = ?')
+    .all(userId)
+    .map((row) => row.unit_id)
+}
+
+export function canAccessUnit(principal, unitId) {
+  if (principal.unitIds === null) return true
+  return principal.unitIds.includes(Number(unitId))
+}

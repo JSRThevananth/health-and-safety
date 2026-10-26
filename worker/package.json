@@ -1,0 +1,24 @@
+{
+  "name": "qa-platform-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker API and static host for the food safety & quality platform",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js",
+    "deploy": "wrangler deploy",
+    "migrate:local": "wrangler d1 migrations apply qa-platform --local",
+    "migrate:remote": "wrangler d1 migrations apply qa-platform --remote"
+  },
+  "dependencies": {
+    "hono": "^4.13.13",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "wrangler": "^4.149.0"
+  }
+}

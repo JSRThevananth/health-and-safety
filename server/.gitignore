@@ -1,0 +1,19 @@
+node_modules/
+data/
+.env
+.env.*
+!.env.example
+
+# Credentials. Matched case-insensitively because Windows treats "Secrets" and
+# "secrets" as the same folder while Git's patterns are case-sensitive - a folder
+# created as "Secrets" would otherwise be committed.
+[Ss]ecrets/
+[Ss]ecret/
+
+# Belt and braces: never commit a service-account key or a private key, wherever
+# it is put. A leaked key is not fixable by deleting it later - it has to be revoked.
+*service-account*.json
+*credentials*.json
+*.pem
+*.p12
+*.key

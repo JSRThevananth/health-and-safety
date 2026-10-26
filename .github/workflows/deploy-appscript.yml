@@ -1,0 +1,132 @@
+name: Deploy to Apps Script
+
+# Push to the branch and the Apps Script project updates itself. Nothing is ever
+# pasted into the Apps Script editor by hand.
+#
+# What this needs, once, in Settings -> Secrets and variables -> Actions:
+#
+#   APPS_SCRIPT_ID             the script id, from the Apps Script project's
+#                              Project Settings page (or your local .clasp.json)
+#   CLASPRC_JSON               the whole contents of ~/.clasprc.json from the
+#                              machine where you ran "clasp login"
+#   APPS_SCRIPT_DEPLOYMENT_ID  optional - the deployment behind your /exec URL
+#
+# See docs/appscript-deploy.md for how to get each one.
+#
+# CLASPRC_JSON holds a Google refresh token for the account that logged in. It
+# belongs in repository secrets and nowhere else: never in a committed file, a
+# log line, or a chat message. A pull request from a fork cannot read it, which
+# is why this workflow runs only on pushes to this repository's own branches.
+
+# Manual only. The Apps Script build is superseded by the Cloudflare one, so
+# this should not run - and fail - on every push to a repository whose owner has
+# no reason to keep Apps Script credentials around.
+on:
+  workflow_dispatch: {}
+
+# Two pushes in quick succession would otherwise race, and whichever clasp push
+# finished last would win regardless of which commit it carried.
+concurrency:
+  group: appscript-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Check the secrets are present
+        env:
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          missing=0
+          [ -n "$APPS_SCRIPT_ID" ] || { echo "::error::Secret APPS_SCRIPT_ID is not set."; missing=1; }
+          [ -n "$CLASPRC_JSON" ] || { echo "::error::Secret CLASPRC_JSON is not set."; missing=1; }
+          if [ "$missing" = 1 ]; then
+            echo "See docs/appscript-deploy.md for how to create them."
+            exit 1
+          fi
+
+      - name: Run the Apps Script tests
+        working-directory: appscript
+        run: npm test
+
+      # A broken bundle would still push cleanly and blank the live app, so the
+      # build runs before anything is sent to Google.
+      - name: Build the single-file UI
+        working-directory: web
+        run: |
+          npm ci
+          npm run build:appscript
+
+      - name: Stage the files clasp will push
+        working-directory: appscript
+        run: node scripts/stage.mjs
+
+      - name: Write the clasp credentials and project file
+        env:
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          # Written outside the checkout so a stray "git add ." can never commit
+          # it, and with the leading dot clasp requires in a config filename.
+          install -d -m 700 "$RUNNER_TEMP/clasp"
+          umask 077
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/clasp/.clasprc.json"
+
+          # .clasp.json is gitignored precisely so the script id is not public,
+          # so it is generated here from the secret on every run.
+          printf '{\n  "scriptId": "%s",\n  "rootDir": "%s"\n}\n' \
+            "$APPS_SCRIPT_ID" "$GITHUB_WORKSPACE/appscript/.deploy" \
+            > "$RUNNER_TEMP/clasp/.clasp.json"
+
+      - name: Push the code to Apps Script
+        env:
+          clasp_config_auth: ${{ runner.temp }}/clasp/.clasprc.json
+          clasp_config_project: ${{ runner.temp }}/clasp/.clasp.json
+        run: |
+          # Pinned to a major version: a new clasp release has changed both the
+          # command names and the credential file format before now, and a
+          # deploy pipeline should not change under you overnight.
+          npx --yes @google/clasp@3 show-authorized-user || {
+            echo "::error::clasp could not use CLASPRC_JSON. Re-run 'clasp login' locally and copy ~/.clasprc.json into the secret again."
+            exit 1
+          }
+
+          # --force accepts the manifest change. Without it clasp stops and waits
+          # for a keypress that never comes in CI, and the job times out.
+          npx --yes @google/clasp@3 push --force
+
+      # clasp push only updates the code. A web app served from /exec runs the
+      # version its deployment points at, so without this step the live URL keeps
+      # serving the old code and the deploy looks like it did nothing.
+      - name: Publish the new version to the live URL
+        env:
+          clasp_config_auth: ${{ runner.temp }}/clasp/.clasprc.json
+          clasp_config_project: ${{ runner.temp }}/clasp/.clasp.json
+          DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
+        run: |
+          if [ -z "$DEPLOYMENT_ID" ]; then
+            echo "::warning::APPS_SCRIPT_DEPLOYMENT_ID is not set, so the code was pushed but the /exec URL still serves the previously published version. See docs/appscript-deploy.md."
+            exit 0
+          fi
+
+          # Redeploying an existing deployment id keeps the same /exec URL, so
+          # the QR code and every saved bookmark keep working.
+          npx --yes @google/clasp@3 create-deployment \
+            --deploymentId "$DEPLOYMENT_ID" \
+            --description "GitHub ${GITHUB_SHA:0:7}"
+
+      - name: Remove the credentials from the runner
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/clasp"

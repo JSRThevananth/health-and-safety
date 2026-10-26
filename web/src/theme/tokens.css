@@ -1,0 +1,199 @@
+/*
+ * Design tokens — Dark developer-tool / Linear style.
+ *
+ * Dark-first, with a precise light mode. Inter font, green accent carried
+ * from the brand, one-pixel hairline borders, subtle radial glows.
+ *
+ * Light is defined on bare :root. Dark is redefined twice: once under the OS
+ * preference (guarded so an explicit light choice still wins) and once under
+ * [data-theme="dark"], so the in-app toggle beats the OS setting in both
+ * directions. Never give a color its only definition inside one of those blocks.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --surface-raised: #ffffff;
+
+  /* Ink */
+  --ink: #0b0f16;
+  --ink-2: #3d4654;
+  --ink-muted: #6b7280;
+  --ink-inverse: #ffffff;
+
+  /* Lines — hairline 8% borders, the Linear signature */
+  --border: rgba(11, 15, 22, 0.08);
+  --border-strong: rgba(11, 15, 22, 0.15);
+
+  /* Brand accent — operational green, carried from the inspection domain */
+  --brand-mark: #10b981;
+  --brand: #059669;
+  --brand-hover: #047857;
+  --brand-soft: rgba(16, 185, 129, 0.10);
+  --brand-ink: #ffffff;
+
+  /* Secondary accent for highlights */
+  --accent-glow: rgba(16, 185, 129, 0.20);
+
+  /* Chart series - validated categorical slots */
+  --series-1: #3b82f6;
+  --series-2: #f59e0b;
+  --series-3: #10b981;
+
+  /* Chart chrome */
+  --grid: #e5e7eb;
+  --axis: #d1d5db;
+
+  /* Status — fixed, never themed */
+  --status-good: #10b981;
+  --status-warning: #f59e0b;
+  --status-serious: #f97316;
+  --status-critical: #ef4444;
+  --status-good-soft: rgba(16, 185, 129, 0.10);
+  --status-warning-soft: rgba(245, 158, 11, 0.10);
+  --status-critical-soft: rgba(239, 68, 68, 0.10);
+  --status-neutral-soft: rgba(107, 114, 128, 0.08);
+
+  /* Depth */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.12);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --maxw: 1200px;
+
+  /* Glass / frosted surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.80);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --glass-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.10);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+
+  /* Ambient wash — subtle in light mode */
+  --amb-1: rgba(16, 185, 129, 0.12);
+  --amb-2: rgba(59, 130, 246, 0.08);
+  --amb-3: rgba(245, 158, 11, 0.06);
+}
+
+/* ── Dark mode ──────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #08090a;
+    --surface: #111214;
+    --surface-2: #1a1c20;
+    --surface-raised: #1a1c20;
+
+    --ink: #f0f1f3;
+    --ink-2: #a1a7b3;
+    --ink-muted: #6b7280;
+    --ink-inverse: #08090a;
+
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+
+    --brand-mark: #10b981;
+    --brand: #34d399;
+    --brand-hover: #6ee7b7;
+    --brand-soft: rgba(52, 211, 153, 0.12);
+    --brand-ink: #022c22;
+
+    --accent-glow: rgba(52, 211, 153, 0.15);
+
+    --series-1: #60a5fa;
+    --series-2: #fbbf24;
+    --series-3: #34d399;
+
+    --grid: #1f2128;
+    --axis: #2d3039;
+
+    --status-good-soft: rgba(16, 185, 129, 0.14);
+    --status-warning-soft: rgba(245, 158, 11, 0.14);
+    --status-critical-soft: rgba(239, 68, 68, 0.14);
+    --status-neutral-soft: rgba(255, 255, 255, 0.06);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.7);
+
+    --glass-bg: rgba(17, 18, 20, 0.72);
+    --glass-bg-strong: rgba(17, 18, 20, 0.88);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
+    --glass-blur: 22px;
+    --glass-saturate: 160%;
+
+    --amb-1: rgba(16, 185, 129, 0.25);
+    --amb-2: rgba(59, 130, 246, 0.15);
+    --amb-3: rgba(245, 158, 11, 0.10);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #08090a;
+  --surface: #111214;
+  --surface-2: #1a1c20;
+  --surface-raised: #1a1c20;
+
+  --ink: #f0f1f3;
+  --ink-2: #a1a7b3;
+  --ink-muted: #6b7280;
+  --ink-inverse: #08090a;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --brand-mark: #10b981;
+  --brand: #34d399;
+  --brand-hover: #6ee7b7;
+  --brand-soft: rgba(52, 211, 153, 0.12);
+  --brand-ink: #022c22;
+
+  --accent-glow: rgba(52, 211, 153, 0.15);
+
+  --series-1: #60a5fa;
+  --series-2: #fbbf24;
+  --series-3: #34d399;
+
+  --grid: #1f2128;
+  --axis: #2d3039;
+
+  --status-good-soft: rgba(16, 185, 129, 0.14);
+  --status-warning-soft: rgba(245, 158, 11, 0.14);
+  --status-critical-soft: rgba(239, 68, 68, 0.14);
+  --status-neutral-soft: rgba(255, 255, 255, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.7);
+
+  --glass-bg: rgba(17, 18, 20, 0.72);
+  --glass-bg-strong: rgba(17, 18, 20, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
+  --glass-blur: 22px;
+  --glass-saturate: 160%;
+
+  --amb-1: rgba(16, 185, 129, 0.25);
+  --amb-2: rgba(59, 130, 246, 0.15);
+  --amb-3: rgba(245, 158, 11, 0.10);
+}

@@ -1,0 +1,12 @@
+{
+  "name": "qa-platform-appscript",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Apps Script build of the health & safety platform",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "stage": "node scripts/stage.mjs",
+    "push": "node scripts/stage.mjs && npx @google/clasp@3 push --force"
+  }
+}

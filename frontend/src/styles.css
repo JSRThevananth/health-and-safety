@@ -1,0 +1,10 @@
+body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f3f6fa}
+.nav{display:flex;justify-content:space-between;align-items:center;background:#0f172a;color:#fff;padding:10px 20px}.nav a{color:#fff;margin-left:14px;text-decoration:none}
+.container{padding:20px}.card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}
+input,select,textarea,button{display:block;width:100%;margin:8px 0;padding:8px}
+button{background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer}
+.login{display:flex;justify-content:center;align-items:center;height:100vh}.login .card{width:300px}.err{color:#b91c1c}
+.kpiGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:12px 0}.kpiGrid>div{background:#eef2ff;padding:10px;border-radius:6px}
+.filters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+table{width:100%;border-collapse:collapse}td,th{border:1px solid #ddd;padding:8px}

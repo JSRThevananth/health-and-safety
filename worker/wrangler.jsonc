@@ -1,0 +1,77 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "qa-platform",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  // nodejs_compat gives the Worker Node's crypto and buffer shims. The app itself
+  // uses WebCrypto, but it keeps a stray dependency from failing at the edge.
+  "compatibility_flags": ["nodejs_compat"],
+
+  // The React build is served by the same Worker as the API, so the browser talks
+  // to one origin: no CORS, no second deploy, no separate domain to keep in sync.
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    // A client-routed app has no file at /inspections/42, so an unmatched path
+    // returns index.html and React resolves the route.
+    "not_found_handling": "single-page-application",
+    // ...but that would also swallow the API, so /api/* always reaches the Worker.
+    "run_worker_first": ["/api/*"]
+  },
+
+  "observability": { "enabled": true },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "qa-platform",
+      // Replace with the id "wrangler d1 create qa-platform" prints. It is not a
+      // secret - it only names the database, which still needs this account to reach.
+      "database_id": "e8fe8238-f98e-43ad-8f31-2c362b5b082b",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Photo and document evidence. Commented out because enabling R2 asks for a card
+  // on file even at zero spend, so the default is Google Drive - see
+  // docs/photos-and-reports.md. Uncomment and set STORAGE_BACKEND to "r2" to use it.
+  // "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "qa-platform-evidence" }],
+
+  "triggers": {
+    // Two schedules, with the code branching on which one fired:
+    //
+    //   03:10 UTC nightly  the housekeeping - purge photos past their retention
+    //                      window, then rebuild the monthly sheets. Off-peak for
+    //                      both European and Gulf units.
+    //   11:45 UTC weekdays the corrective action digest, which is quarter to
+    //                      eight in Montreal.
+    //
+    // Separate rather than combined because a Worker gets 50 subrequests per
+    // invocation and the nightly sweep already uses about 38; sharing would mean
+    // one of the two silently doing nothing.
+    "crons": ["10 3 * * *", "45 11 * * 1-5"]
+  },
+
+  "vars": {
+    "ENVIRONMENT": "production",
+    "BREVO_SENDER_NAME": "Health & Safety Update",
+    // Evidence storage. "drive" uploads photos to the Google Drive folder named
+    // by GDRIVE_FOLDER_ID, acting as the account owner through the OAuth
+    // refresh token. "none" switches photo upload off; "r2" is the other
+    // option, and wants a card on file.
+    "STORAGE_BACKEND": "drive",
+    "BREVO_ENABLED": "true",
+    // Photo links in emailed reports are absolute: a relative one does not
+    // resolve in an inbox, so the app has to be told where it lives.
+    "PUBLIC_URL": "https://qa-platform.yulfassembly.workers.dev"
+  }
+
+  // Secrets are set with "wrangler secret put NAME", never in this file:
+  //   JWT_SECRET            signs session tokens and report photo links
+  //   BREVO_API_KEY         transactional email
+  //   BREVO_SENDER_EMAIL    the verified "from" address
+  //   GDRIVE_CLIENT_ID      ) Google OAuth, acting as the account owner.
+  //   GDRIVE_CLIENT_SECRET  ) A service account cannot own files in a personal
+  //   GDRIVE_REFRESH_TOKEN  ) My Drive, so this is the only way on a free account.
+  //   GDRIVE_FOLDER_ID      the Drive folder to upload into
+}
